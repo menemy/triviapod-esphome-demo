@@ -82,11 +82,16 @@ def main():
         if args.stage_web:
             web=ROOT/'docs'; firmware=web/'firmware';firmware.mkdir(exist_ok=True)
             name='triviapod-demo.factory.bin';shutil.copyfile(dest/'firmware.factory.bin',firmware/name)
+            # Immutable image URL prevents a browser/CDN from reusing an older download.
+            for previous in firmware.glob('triviapod-demo-????????.factory.bin'):
+                previous.unlink()
+            immutable_name='triviapod-demo-'+images['firmware.factory.bin']['sha256_prefix']+'.factory.bin'
+            shutil.copyfile(dest/'firmware.factory.bin',firmware/immutable_name)
             (firmware/'build.json').write_text(json.dumps(metadata,indent=2)+'\n')
             (firmware/'SHA256SUMS').write_text(images['firmware.factory.bin']['sha256']+'  '+name+'\n')
             manifest={'name':'TriviaPOD Prototype','version':version,'home_assistant_domain':'esphome',
                       'new_install_prompt_erase':True,'new_install_improv_wait_time':20,
-                      'builds':[{'chipFamily':'ESP32-S3','parts':[{'path':'firmware/'+name,'offset':0}]}]}
+                      'builds':[{'chipFamily':'ESP32-S3','parts':[{'path':'firmware/'+immutable_name,'offset':0}]}]}
             (web/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
             (web/'version.json').write_text(json.dumps({**identity,'factory_sha256':images['firmware.factory.bin']['sha256']},indent=2)+'\n')
         print(json.dumps({'artifact_directory':str(dest),**identity,'images':images},indent=2),flush=True)

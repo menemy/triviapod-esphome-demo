@@ -18,11 +18,13 @@ def check_export():
     assert manifest['version']==meta['version']==visible['version']
     assert manifest['home_assistant_domain']=='esphome'
     assert len(manifest['builds'])==1 and manifest['builds'][0]['chipFamily']=='ESP32-S3'
-    assert manifest['builds'][0]['parts']==[{'path':'firmware/triviapod-demo.factory.bin','offset':0}]
+    immutable='triviapod-demo-'+meta['images']['firmware.factory.bin']['sha256_prefix']+'.factory.bin'
+    assert manifest['builds'][0]['parts']==[{'path':'firmware/'+immutable,'offset':0}]
     image=docs/'firmware/triviapod-demo.factory.bin';data=image.read_bytes()
     assert data[0]==0xE9 and len(data)<32*1024*1024
     digest=hashlib.sha256(data).hexdigest();expected=meta['images']['firmware.factory.bin']
     assert digest==expected['sha256']==visible['factory_sha256'] and len(data)==expected['bytes']
+    assert (docs/'firmware'/immutable).read_bytes()==data
     assert digest in (docs/'firmware/SHA256SUMS').read_text()
     for name,expected_hash in meta['source_sha256'].items():
         path=(ROOT/name).resolve()

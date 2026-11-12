@@ -32,6 +32,7 @@ try {
  document.querySelector('#version').textContent = build.version;
  document.querySelector('#built').textContent = build.built_utc;
  document.querySelector('#sha').textContent = build.factory_sha256;
+ button.setAttribute('manifest', 'manifest.json?v='+encodeURIComponent(build.version));
  button.hidden = false;
 } catch (_) {document.querySelector('#build-error').hidden=false;document.querySelector('#version').textContent='No staged build';}
 </script></body></html>
