@@ -1,27 +1,26 @@
 {
   "project": "menemy.triviapod-demo",
-  "version": "0.1.0-prototype+b0003.20261112T042044Z",
-  "display_version": "0.1.0-prototype b0003",
-  "build_number": 3,
-  "built_utc": "2026-11-12 04:20:44 UTC",
-  "build_short": "12 Nov 04:20:44 UTC",
+  "version": "0.1.0-prototype+b0005.20261112T044322Z",
+  "display_version": "0.1.0-prototype b0005",
+  "build_number": 5,
+  "built_utc": "2026-11-12 04:43:22 UTC",
+  "build_short": "12 Nov 04:43:22 UTC",
   "esphome": "2026.9.1",
   "images": {
     "firmware.factory.bin": {
       "bytes": 1116768,
-      "sha256": "27d6ea81257bb425d1e1b302edbc758dae421c2823d6a9d1b2e349aa8ebba04e",
-      "sha256_prefix": "27d6ea81"
+      "sha256": "2355f001197baa6803e7173a1eece441c0a76d2430a3e04f1747e1968f5c3b37",
+      "sha256_prefix": "2355f001"
     },
     "firmware.ota.bin": {
       "bytes": 1051232,
-      "sha256": "d52d8a96b52fe64299e425d1d9b04c973f183c542acf7c9e5cc51b5c2b796b2b",
-      "sha256_prefix": "d52d8a96"
+      "sha256": "52f288e0b59d352e984d6f66482cd6d0336b6a355fdea3b34e528389f30b5417",
+      "sha256_prefix": "52f288e0"
     }
   },
   "source_sha256": {
-    "triviapod-demo.yaml": "0aa20e0087887c7a12fe9adb0a6b01df1f35eeba3e33589d928e3ce30976946c",
-    "version_info.h": "c49a1b737582ede3271d1b77171549a6363d199b55acb7f908060de3b057ba58",
-    "firmware-release.txt": "8601c6912965adbf06288b149837f93c76a0548a97fb91293fd3327fa2071bd6",
+    "triviapod-demo.yaml": "b2ad30f666c1f9f62a433338701a87d09590b9585a1fd8d77eeceb5cfe3b783e",
+    "version_info.h": "c3956f9ca2a2361b1ef7fba5cf6388b3507c7c18b06671c7e22724d4ec07493d",
     "requirements.txt": "40190f8f72813e2ec3c530425d34561fd0a21657828adb2e4b4a877c8a70218a",
     "ui_metrics.h": "1d7123a5c248c3c677007814575027f1c1aa563d6b96f0fbb87e07aa6f82a9eb",
     "doorbell_frame.h": "bb1b114ded26e9cfdbee3264ce5c5e591f5db367ed8ce51cf648976a44f82040",
@@ -32,7 +31,7 @@
     "packages/power.yaml": "07141b22bda18d5aa15ea4cf02341bc03481992ddda83b532b6e1f96522583f4",
     "packages/display.yaml": "5b249ecdd3db755fc33bb2c214295a33dfd785824922eb1634d1c9a9e5a028b7",
     "packages/sensors.yaml": "02c6301a38744efaa7b5ae10513d9cd8efbe8764ee8688bcb44a552298c7f631",
-    "packages/ui.yaml": "719ba07c5b21ea4b4c748b623f2d154479f4dfecb82a57d3c25557cc22685b8c",
+    "packages/ui.yaml": "aa36d0ccf768b6ee2f2d4f09123af1649bf18303a9f499dd243d1e7d09f4e97a",
     "packages/inputs.yaml": "d18b2f7cd4431dbc72ca1c1fff2a65ad6f2356174419262dcf10dfe0f6b24fda",
     "packages/audio.yaml": "c7717a96468cc3585c6c36866b230494926ec14ba12aa49ff657c107a41247e6",
     "components/triviapod/__init__.py": "c7b1471680373806fecc84119bb1e6a6f52553604d1156abb96ca9db6d82309e",
@@ -42,7 +41,7 @@
     "components/triviapod/rtc_decode.h": "b7d76e6267acfa74143f111e1617d494aa940444db78bcb20ec303a9485f8824",
     "components/triviapod_media/triviapod_media.h": "adfdc96b6435ba20d598ce1caa73fc45c94e91b3eda81f362ba5e9641094d512",
     "components/triviapod/triviapod.cpp": "3faa480371cf2fc67caf49d74c90108fbb918d8fef24575b09dba12decebd361",
-    "tools/build.py": "3634727a31ec7183207afa388fe76bb65eaa103a6688f90dd3b5501c3c56eb17",
+    "tools/build.py": "1c4232420ea8deca1788aba81c61541a6bc07527012c689652b914f8bd051472",
     "fonts/NotoSans.ttf": "bfb7bb691513f12e734dc346c03a03f784912432d7e3fa8e56efcf906fe86b3d",
     "fonts/OFL.txt": "cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a"
   },

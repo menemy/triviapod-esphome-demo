@@ -1,10 +1,10 @@
 {
   "project": "menemy.triviapod-demo",
-  "version": "0.1.0-prototype+b0003.20261112T042044Z",
-  "display_version": "0.1.0-prototype b0003",
-  "build_number": 3,
-  "built_utc": "2026-11-12 04:20:44 UTC",
-  "build_short": "12 Nov 04:20:44 UTC",
+  "version": "0.1.0-prototype+b0005.20261112T044322Z",
+  "display_version": "0.1.0-prototype b0005",
+  "build_number": 5,
+  "built_utc": "2026-11-12 04:43:22 UTC",
+  "build_short": "12 Nov 04:43:22 UTC",
   "esphome": "2026.9.1",
-  "factory_sha256": "27d6ea81257bb425d1e1b302edbc758dae421c2823d6a9d1b2e349aa8ebba04e"
+  "factory_sha256": "2355f001197baa6803e7173a1eece441c0a76d2430a3e04f1747e1968f5c3b37"
 }
