@@ -1,4 +1,4 @@
-# Include-only versioned full-circle camera and owner-audible A/B tone UI.
+# TriviaPOD prototype checks and optional circular snapshot page.
 packages:
   hardware: !include sensors.yaml
 external_components:

@@ -1,1 +1,0 @@
-Experimental ESPHome prototype for M5Stack TriviaPOD: a demo to evaluate whether the device suits Home Assistant. Not a production-ready port.

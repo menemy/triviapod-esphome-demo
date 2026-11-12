@@ -13,7 +13,7 @@ import wave
 
 ROOT=Path(__file__).resolve().parents[1]
 
-def check_export():
+def check_export(require_device_run=False):
     docs=ROOT/'docs';meta=json.loads((docs/'firmware/build.json').read_text());manifest=json.loads((docs/'manifest.json').read_text());visible=json.loads((docs/'version.json').read_text())
     assert manifest['version']==meta['version']==visible['version']
     assert manifest['home_assistant_domain']=='esphome'
@@ -26,6 +26,10 @@ def check_export():
     assert digest==expected['sha256']==visible['factory_sha256'] and len(data)==expected['bytes']
     assert (docs/'firmware'/immutable).read_bytes()==data
     assert digest in (docs/'firmware/SHA256SUMS').read_text()
+    validation=json.loads((docs/'firmware/validation.json').read_text())
+    assert validation['factory_sha256']==digest
+    if require_device_run and not validation.get('ran_on_device'):
+        raise SystemExit('Generic image has not run on the device; installer publication is blocked')
     for name,expected_hash in meta['source_sha256'].items():
         path=(ROOT/name).resolve()
         assert path.is_relative_to(ROOT) and not any(v in path.relative_to(ROOT).parts for v in ['secrets.yaml','.esphome','.build','.git'])
@@ -58,7 +62,7 @@ def host_tests():
     subprocess.run([shutil.which('python3') or 'python3',str(ROOT/'tests/test_media_guard.py')],cwd=ROOT,check=True)
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--export-only',action='store_true');args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--export-only',action='store_true');parser.add_argument('--require-device-run',action='store_true');args=parser.parse_args()
     if not args.export_only:host_tests()
-    check_export()
+    check_export(require_device_run=args.require_device_run)
 if __name__=='__main__':main()
