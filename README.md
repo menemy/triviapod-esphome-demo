@@ -6,12 +6,14 @@
 
 Target: **M5Stack TriviaPOD TP-01-A**, ESP32-S3R8, 32 MB flash, 8 MB octal PSRAM, round 466×466 AMOLED. Do not install it on a different ESP32 device merely because the chip is an ESP32-S3.
 
+During bring-up, no published TriviaPOD schematic or pin map from M5Stack was available to this project. The [official TriviaPOD product page](https://docs.m5stack.com/en/core/TriviaPOD), checked 2026-11-12, has no schematic/pin-map section. This unofficial prototype uses the Muse board bring-up and inferred StopWatch mapping; it is not a schematic-validated port.
+
 ## Try the demo
 
 The intended installation path is the [browser USB installer](https://menemy.github.io/triviapod-esphome-demo/) once this repository and its Pages site are published. The local preview is `docs/index.html`; it does not publish anything.
 
 1. Connect TriviaPOD with a USB data cable. Open the installer in a browser with Web Serial support, such as Chrome or Edge on a desktop computer.
-2. Select **Install prototype**, select the TriviaPOD USB device, and follow the prompts. This replaces the current firmware. Keep your own backup/configuration if you need to return to it.
+2. Select **Install prototype**, select the TriviaPOD USB device, and follow the prompts. This replaces the current firmware. M5Stack warns that the official TriviaPOD experience may not be recoverable after installing custom firmware. Keep your own backup/configuration if you need it, but do not assume it guarantees restoration. [Official custom-firmware note](https://docs.m5stack.com/en/core/TriviaPOD).
 3. After installation, use the installer's **Wi-Fi** setup. This uses [Improv via Serial](https://esphome.io/components/improv_serial/); no shared Wi-Fi credentials are compiled into the download.
 4. In Home Assistant, open **Settings → Devices & services** and add the discovered **TriviaPOD Prototype** ESPHome device. If discovery does not appear, use its `triviapod-demo-<MAC suffix>.local` hostname or the address shown by your router, port 6053.
 
