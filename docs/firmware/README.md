@@ -1,3 +1,1 @@
-# Firmware files
-
-The factory image is merged for ESP32-S3,32 MB flash,offset0. SHA256SUMS and build.json identify the image and its sources. The installer uses the matching hash-named copy. The WAV is a synthetic1/2kHz,16kHzmono test signal. validation.json records which device checks have run for this exact firmware hash.
+Only the generic credential-free image built from this repository belongs here. Never copy a private bring-up image, flash dump, NVS data, secrets file or owner build into this directory. tools/build.py --stage-web stages only its own generic build and records hashes/source provenance in build.json. The exported generic/provisioning image has not yet been flashed on hardware.

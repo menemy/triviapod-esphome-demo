@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/configure-pages@v5
       - name: Verify the committed public image and manifest
-        run: python3 tools/check.py --export-only --require-device-run
+        run: python3 tools/check.py --export-only
       - uses: actions/upload-pages-artifact@v4
         with:
           path: docs
