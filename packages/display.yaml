@@ -1,0 +1,43 @@
+packages:
+  base: !include hardware.yaml
+spi:
+  id: panel_spi
+  type: quad
+  clk_pin: GPIO40
+  data_pins: [GPIO41, GPIO42, GPIO46, GPIO45]
+display:
+  - platform: mipi_spi
+    model: CO5300
+    id: panel
+    spi_id: panel_spi
+    cs_pin: GPIO39
+    data_rate: 40MHz
+    dimensions:
+      width: 466
+      height: 466
+      offset_width: 6
+      offset_height: 0
+    draw_rounding: 2
+    color_order: RGB
+    brightness: 128
+    update_interval: 1s
+    lambda: |-
+      it.fill(Color::BLACK);
+      it.circle(233, 233, 220, Color(180, 180, 180));
+      it.filled_rectangle(95, 150, 90, 166, Color(255, 0, 0));
+      it.filled_rectangle(188, 150, 90, 166, Color(0, 255, 0));
+      it.filled_rectangle(281, 150, 90, 166, Color(0, 0, 255));
+number:
+  - platform: template
+    name: Display Brightness
+    id: display_brightness
+    min_value: 0
+    max_value: 100
+    step: 1
+    initial_value: 50
+    optimistic: true
+    set_action:
+      - lambda: |-
+          const uint8_t command = uint8_t(x * 255.0f / 100.0f);
+          id(panel).set_brightness(command);
+          ESP_LOGI("brightness_check", "requested_pct=%.0f command=0x%02X uptime_ms=%u", x, command, unsigned(millis()));

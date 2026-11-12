@@ -1,0 +1,19 @@
+name: Check prototype
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Host and staged-export checks
+        run: python3 tools/check.py
+      - name: Build the generic demo with pinned ESPHome
+        run: >-
+          docker run --rm --entrypoint python3
+          -v "${{ github.workspace }}:/config" -w /config
+          ghcr.io/esphome/esphome:2026.9.1 tools/build.py

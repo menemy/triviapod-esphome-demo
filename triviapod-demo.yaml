@@ -1,0 +1,56 @@
+# Experimental M5Stack TriviaPOD TP-01-A prototype, not a production port.
+# Build via tools/build.py to generate a distinct visible identity each time.
+packages:
+  demo: !include packages/ui.yaml
+esphome:
+  project:
+    name: menemy.triviapod-demo
+    version: "0.1.0-prototype+b0003.20261112T042044Z" # GENERATED_BUILD_VERSION
+  includes: [version_info.h]
+  on_boot:
+    priority: -85
+    then:
+      - lambda: |-
+          trivia_tone::requested_profile = trivia_tone::Profile::HIGH_B;
+          id(version_splash) = true;
+          id(firmware_identity).publish_state(trivia_version::VERSION);
+          id(firmware_build_utc).publish_state(trivia_version::BUILD_UTC);
+          ESP_LOGI("version_check", "event=boot project=%s version=%s built_utc=%s", trivia_version::PROJECT, trivia_version::VERSION, trivia_version::BUILD_UTC);
+      - component.update: panel
+      - delay: 5s
+      - lambda: id(version_splash) = false;
+      - component.update: panel
+globals:
+  - id: version_splash
+    type: bool
+    initial_value: 'false'
+font:
+  - file: fonts/NotoSans.ttf
+    id: version_font
+    size: 12
+wifi:
+  reboot_timeout: 0s
+improv_serial:
+api:
+  reboot_timeout: 0s
+# Generic demo: no shared Wi-Fi or API key is embedded. The local API is
+# unencrypted; see README before use beyond this evaluation prototype.
+logger:
+  level: INFO
+  logs:
+    wifi: NONE
+    api: NONE
+    mdns: NONE
+    improv_serial: WARN
+    version_check: INFO
+text_sensor:
+  - platform: template
+    id: firmware_identity
+    name: Firmware Version
+    entity_category: diagnostic
+    update_interval: never
+  - platform: template
+    id: firmware_build_utc
+    name: Firmware Build UTC
+    entity_category: diagnostic
+    update_interval: never

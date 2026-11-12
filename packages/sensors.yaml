@@ -1,0 +1,90 @@
+packages:
+  audio: !include audio.yaml
+motion:
+  - platform: bmi270
+    id: board_imu
+    i2c_id: board_i2c
+    address: 0x68
+    update_interval: 250ms
+sensor:
+  - platform: bmi270
+    bmi270_id: board_imu
+    name: IMU Temperature
+    id: imu_temp
+  - platform: motion
+    motion_id: board_imu
+    type: acceleration_x
+    name: IMU Acceleration X
+    id: imu_ax
+    filters:
+      - throttle: 1s
+  - platform: motion
+    motion_id: board_imu
+    type: acceleration_y
+    name: IMU Acceleration Y
+    id: imu_ay
+    filters:
+      - throttle: 1s
+  - platform: motion
+    motion_id: board_imu
+    type: acceleration_z
+    name: IMU Acceleration Z
+    id: imu_az
+    filters:
+      - throttle: 1s
+  - platform: motion
+    motion_id: board_imu
+    type: angular_rate_x
+    name: IMU Angular Rate X
+    id: imu_gx
+    filters:
+      - throttle: 1s
+  - platform: motion
+    motion_id: board_imu
+    type: angular_rate_y
+    name: IMU Angular Rate Y
+    id: imu_gy
+    filters:
+      - throttle: 1s
+  - platform: motion
+    motion_id: board_imu
+    type: angular_rate_z
+    name: IMU Angular Rate Z
+    id: imu_gz
+    filters:
+      - throttle: 1s
+# RTC address is known; its identity/backup configuration is not changed by this image.
+text_sensor:
+  - platform: template
+    name: RTC Read-only Time
+    id: rtc_readout
+    update_interval: 10s
+    on_value:
+      - lambda: id(ui_rtc) = x;
+    lambda: return id(board).rtc_readonly_status();
+switch:
+  - platform: template
+    name: Power LED
+    id: power_led
+    optimistic: false
+    restore_mode: ALWAYS_OFF
+    turn_on_action:
+      - lambda: |-
+          if (id(board).led(true)) id(power_led).publish_state(true);
+    turn_off_action:
+      - lambda: |-
+          if (id(board).led(false)) id(power_led).publish_state(false);
+
+binary_sensor:
+  - id: !extend power_button
+    on_press:
+      - switch.toggle: power_led
+
+interval:
+  - interval: 5s
+    then:
+      - lambda: |-
+          const bool identity_ok = id(board).log_imu_identity();
+          ESP_LOGI("imu_check", "identity_ok=%s accel_g=%.3f,%.3f,%.3f gyro_dps=%.3f,%.3f,%.3f temperature_c=%.2f",
+              identity_ok ? "yes" : "no", id(imu_ax).state, id(imu_ay).state, id(imu_az).state,
+              id(imu_gx).state, id(imu_gy).state, id(imu_gz).state, id(imu_temp).state);

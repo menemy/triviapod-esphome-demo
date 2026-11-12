@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TriviaPOD prototype · ESPHome USB installer</title>
+<meta name="description" content="Experimental ESPHome prototype for M5Stack TriviaPOD: evaluate suitability for Home Assistant.">
+<style>
+:root{color-scheme:light;--ink:#172633;--muted:#526475;--accent:#147d74;--line:#dbe5e7;--paper:#f4f8f7}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 system-ui,-apple-system,sans-serif}main{max-width:820px;margin:0 auto;padding:56px 24px 36px}header{margin-bottom:28px}.tag{display:inline-block;padding:3px 12px;border:1px solid #a8c5bf;border-radius:20px;font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}h1{font-size:clamp(32px,6vw,49px);line-height:1.12;letter-spacing:-.035em;margin:18px 0}h2{font-size:23px;margin:0 0 12px}p{margin:10px 0}.intro{font-size:20px;max-width:690px;color:var(--muted)}.card{padding:25px;background:white;border:1px solid var(--line);border-radius:17px;margin:18px 0}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:22px 0}.steps b{display:block;color:var(--accent)}.steps p{font-size:15px;color:var(--muted)}button{background:var(--accent);color:white;border:0;border-radius:9px;padding:14px 22px;font:600 17px system-ui;cursor:pointer}button:hover{background:#09675f}a{color:#096f68}small,.small{font-size:14px;color:var(--muted)}code{font:13px/1.7 ui-monospace,SFMono-Regular,monospace;overflow-wrap:anywhere}.identity{display:grid;grid-template-columns:90px 1fr;gap:5px 12px;margin:18px 0}.identity dt{color:var(--muted);font-size:14px}.identity dd{margin:0;min-width:0}.note{border-left:3px solid #c59a36;padding-left:16px}ul{padding-left:22px}.links{display:flex;gap:22px;flex-wrap:wrap}footer{padding-top:15px}@media(max-width:580px){main{padding:30px 17px}.card{padding:19px}.steps{grid-template-columns:1fr;gap:0}.steps p{margin-top:3px}.identity{grid-template-columns:1fr;gap:0}.identity dd{margin-bottom:8px}}
+</style>
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</head>
+<body><main>
+<header><span class="tag">Experimental prototype</span><h1>Try TriviaPOD with Home Assistant.</h1><p class="intro">A small demo to find out whether this device suits your Home Assistant setup. It is not a production-ready port.</p></header>
+<section class="card"><h2>Install over USB</h2><p><strong>Only M5Stack TriviaPOD TP-01-A</strong> — ESP32-S3, 32 MB flash, 8 MB PSRAM. A matching ESP32 chip alone does not make another board compatible.</p>
+<div class="steps"><div><b>1 · Connect</b><p>Use a USB data cable and a desktop browser with Web Serial, such as Chrome or Edge.</p></div><div><b>2 · Install &amp; Wi-Fi</b><p>Select TriviaPOD, install the demo, then enter your Wi-Fi in the installer.</p></div><div><b>3 · Add in HA</b><p>Open Settings → Devices &amp; services and add the discovered ESPHome device.</p></div></div>
+<p class="small">Installation replaces the current firmware. Keep your own backup/configuration if you need it. No shared Wi-Fi credentials or API key are embedded.</p>
+<dl class="identity"><dt>Version</dt><dd><code id="version">Loading build identity…</code></dd><dt>Built UTC</dt><dd><code id="built">—</code></dd><dt>SHA-256</dt><dd><code id="sha">—</code></dd></dl>
+<esp-web-install-button id="installer" manifest="manifest.json" hidden><button slot="activate">Install prototype</button><span slot="unsupported">This browser does not support Web Serial. Try Chrome or Edge on a desktop computer.</span><span slot="not-allowed">Open this page over HTTPS, or use a localhost preview.</span></esp-web-install-button><p id="build-error" class="small" hidden>Build not staged yet. Run the repository build helper before using this installer.</p>
+</section>
+<section class="card"><h2>What you can try</h2><ul><li>Yellow: record a short phrase and hear it replayed from volatile RAM.</li><li>Tone: a 1 kHz / 2 kHz beep. No quiet 440 Hz option in the demo UI.</li><li>Touch, all three buttons, brightness, vibration and LED controls.</li><li>Battery/USB and IMU readings as Home Assistant entities.</li><li>Optional full-circle camera snapshots — set your own small JPEG URL in HA.</li></ul><p class="small">The visible version appears at boot, at the bottom of Checks, and in HA diagnostics.</p></section>
+<section class="card note"><h2>Prototype limits</h2><p>The generic export/provisioning build has not yet been flashed on hardware. Its hardware basis was tested on one TP-01-A; compatibility with other revisions is not established.</p><p class="small">The generic demo uses an unencrypted local ESPHome API on your test LAN. For longer-lived use, compile your own unique API encryption key. Camera refresh is roughly one JPEG per second in bring-up, not video. RTC time, active charging, HA adoption/ring/media and some physical indicators still need evaluation.</p></section>
+<footer class="small"><div class="links"><a href="https://github.com/menemy/triviapod-esphome-demo">Source &amp; instructions</a><a href="firmware/triviapod-demo.factory.bin">Factory image</a><a href="firmware/build.json">Build metadata</a><a href="firmware/SHA256SUMS">Checksum</a></div><p>Independent experimental project. Not an official M5Stack firmware.</p></footer>
+</main><script type="module">
+const button = document.querySelector('#installer');
+customElements.whenDefined('esp-web-install-button').then(() => {
+ button.overrides = {checkSameFirmware: (_manifest, info) => info.firmware === 'menemy.triviapod-demo'};
+});
+try {
+ const response = await fetch('version.json', {cache:'no-store'});
+ if (!response.ok) throw new Error('metadata unavailable');
+ const build = await response.json();
+ document.querySelector('#version').textContent = build.version;
+ document.querySelector('#built').textContent = build.built_utc;
+ document.querySelector('#sha').textContent = build.factory_sha256;
+ button.hidden = false;
+} catch (_) {document.querySelector('#build-error').hidden=false;document.querySelector('#version').textContent='No staged build';}
+</script></body></html>

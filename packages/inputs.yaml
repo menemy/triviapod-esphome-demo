@@ -1,0 +1,189 @@
+packages:
+  display: !include display.yaml
+esphome:
+  includes: [ui_metrics.h]
+  on_boot:
+    priority: -100
+    then:
+      - component.update: panel
+font:
+  - file: fonts/NotoSans.ttf
+    id: ui_font
+    size: 18
+globals:
+  - id: yellow_count
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: blue_count
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: power_count
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: touch_x
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: touch_y
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: ui_audio_enabled
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+  - id: ui_action
+    type: std::string
+    restore_value: false
+    initial_value: '"Ready"'
+  - id: ui_yellow_hint
+    type: std::string
+    restore_value: false
+    initial_value: '"Brightness 10/50/100"'
+  - id: ui_blue_hint
+    type: std::string
+    restore_value: false
+    initial_value: '"Key test"'
+  - id: ui_power_hint
+    type: std::string
+    restore_value: false
+    initial_value: '"Key test"'
+  - id: ui_detail1
+    type: std::string
+    restore_value: false
+    initial_value: '"Touch screen to mark"'
+  - id: ui_rtc
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+display:
+  - id: !extend panel
+    update_interval: 1s
+    lambda: |-
+      it.fill(Color::BLACK);
+      it.circle(233, 233, 220, Color(120, 120, 120));
+      it.printf(233, 55, id(ui_font), Color::WHITE, TextAlign::CENTER, "TriviaPOD tests");
+      it.filled_rectangle(98, 88, 90, 10, Color(255, 0, 0));
+      it.filled_rectangle(188, 88, 90, 10, Color(0, 255, 0));
+      it.filled_rectangle(278, 88, 90, 10, Color(0, 0, 255));
+      it.filled_circle(140, 145, 22, id(yellow_button).state ? Color(255, 230, 0) : Color(70, 65, 0));
+      it.filled_circle(233, 145, 22, id(blue_button).state ? Color(0, 100, 255) : Color(0, 25, 70));
+      it.filled_circle(326, 145, 22, id(power_button).state ? Color(255, 60, 60) : Color(70, 15, 15));
+      it.printf(140, 180, id(ui_font), Color::WHITE, TextAlign::CENTER, "Y %d", id(yellow_count));
+      it.printf(233, 180, id(ui_font), Color::WHITE, TextAlign::CENTER, "B %d", id(blue_count));
+      it.printf(326, 180, id(ui_font), Color::WHITE, TextAlign::CENTER, "P %d", id(power_count));
+      it.printf(233, 215, id(ui_font), Color::WHITE, TextAlign::CENTER, "Touch %d,%d %s", id(touch_x), id(touch_y), id(screen_touch).state ? "DOWN" : "UP");
+      it.printf(233, 245, id(ui_font), Color::WHITE, TextAlign::CENTER, "%s", id(ui_action).c_str());
+      it.printf(233, 275, id(ui_font), Color::WHITE, TextAlign::CENTER, "%s", id(ui_detail1).c_str());
+      if (id(ui_audio_enabled))
+        it.printf(233, 300, id(ui_font), Color::WHITE, TextAlign::CENTER, "Mic peak %d", trivia_metrics::microphone_peak.load());
+      it.printf(233, 325, id(ui_font), Color::WHITE, TextAlign::CENTER, "%s", id(ui_rtc).c_str());
+      it.printf(233, 355, id(ui_font), Color::WHITE, TextAlign::CENTER, "Yellow: %s", id(ui_yellow_hint).c_str());
+      it.printf(233, 380, id(ui_font), Color::WHITE, TextAlign::CENTER, "Blue: %s", id(ui_blue_hint).c_str());
+      it.printf(233, 405, id(ui_font), Color::WHITE, TextAlign::CENTER, "Power: %s", id(ui_power_hint).c_str());
+      if (id(screen_touch).state)
+        it.circle(id(touch_x), id(touch_y), 12, Color(255, 255, 0));
+touchscreen:
+  - platform: cst816
+    id: board_touch
+    i2c_id: board_i2c
+    address: 0x15
+    display: panel
+    update_interval: 30ms
+    calibration:
+      x_min: 0
+      x_max: 465
+      y_min: 0
+      y_max: 465
+    on_touch:
+      - binary_sensor.template.publish:
+          id: screen_touch
+          state: ON
+      - lambda: |-
+          id(touch_x) = touch.x; id(touch_y) = touch.y;
+          id(ui_action) = "Touch pressed";
+          ESP_LOGI("touch_check", "event=press id=%u x=%d y=%d uptime_ms=%u", unsigned(touch.id), touch.x, touch.y, unsigned(millis()));
+      - component.update: panel
+    on_update:
+      - lambda: |-
+          for (const auto &point : touches) {
+            ESP_LOGI("touch_check", "event=update id=%u state=%u x=%d y=%d uptime_ms=%u", unsigned(point.id), unsigned(point.state), point.x, point.y, unsigned(millis()));
+          }
+          if (!touches.empty()) {
+            id(touch_x) = touches[0].x; id(touch_y) = touches[0].y;
+          }
+    on_release:
+      - binary_sensor.template.publish:
+          id: screen_touch
+          state: OFF
+      - lambda: |-
+          id(ui_action) = "Touch released";
+          ESP_LOGI("touch_check", "event=release x=%d y=%d uptime_ms=%u", id(touch_x), id(touch_y), unsigned(millis()));
+      - component.update: panel
+binary_sensor:
+  - platform: gpio
+    name: Yellow Rim Button
+    id: yellow_button
+    pin:
+      number: GPIO2
+      mode: INPUT_PULLUP
+      inverted: true
+    filters:
+      - delayed_on_off: 30ms
+    on_press:
+      - lambda: |-
+          ++id(yellow_count); id(ui_action) = "Yellow pressed";
+          ESP_LOGI("key_check", "yellow count=%d event=press uptime_ms=%u", id(yellow_count), unsigned(millis()));
+      - if:
+          condition:
+            lambda: return !id(ui_audio_enabled);
+          then:
+            - number.set:
+                id: display_brightness
+                value: !lambda |-
+                  const float current = id(display_brightness).state;
+                  return current < 30 ? 50 : current < 80 ? 100 : 10;
+      - component.update: panel
+    on_release:
+      - lambda: |-
+          ESP_LOGI("key_check", "yellow count=%d event=release uptime_ms=%u", id(yellow_count), unsigned(millis()));
+      - component.update: panel
+  - platform: gpio
+    name: Blue Rim Button
+    id: blue_button
+    pin:
+      number: GPIO1
+      mode: INPUT_PULLUP
+      inverted: true
+    filters:
+      - delayed_on_off: 30ms
+    on_press:
+      - lambda: |-
+          ++id(blue_count); id(ui_action) = "Blue pressed";
+          ESP_LOGI("key_check", "blue count=%d event=press uptime_ms=%u", id(blue_count), unsigned(millis()));
+      - component.update: panel
+    on_release:
+      - lambda: |-
+          ESP_LOGI("key_check", "blue count=%d event=release uptime_ms=%u", id(blue_count), unsigned(millis()));
+      - component.update: panel
+  - platform: template
+    name: Power Button
+    id: power_button
+    lambda: return id(board).power_button();
+    filters:
+      - delayed_on_off: 30ms
+    on_press:
+      - lambda: |-
+          ++id(power_count); id(ui_action) = "Power pressed";
+          ESP_LOGI("key_check", "power count=%d event=press uptime_ms=%u", id(power_count), unsigned(millis()));
+      - component.update: panel
+    on_release:
+      - lambda: |-
+          ESP_LOGI("key_check", "power count=%d event=release uptime_ms=%u", id(power_count), unsigned(millis()));
+      - component.update: panel
+  - platform: template
+    name: Screen Touch
+    id: screen_touch

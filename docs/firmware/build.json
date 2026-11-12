@@ -1,0 +1,52 @@
+{
+  "project": "menemy.triviapod-demo",
+  "version": "0.1.0-prototype+b0003.20261112T042044Z",
+  "display_version": "0.1.0-prototype b0003",
+  "build_number": 3,
+  "built_utc": "2026-11-12 04:20:44 UTC",
+  "build_short": "12 Nov 04:20:44 UTC",
+  "esphome": "2026.9.1",
+  "images": {
+    "firmware.factory.bin": {
+      "bytes": 1116768,
+      "sha256": "27d6ea81257bb425d1e1b302edbc758dae421c2823d6a9d1b2e349aa8ebba04e",
+      "sha256_prefix": "27d6ea81"
+    },
+    "firmware.ota.bin": {
+      "bytes": 1051232,
+      "sha256": "d52d8a96b52fe64299e425d1d9b04c973f183c542acf7c9e5cc51b5c2b796b2b",
+      "sha256_prefix": "d52d8a96"
+    }
+  },
+  "source_sha256": {
+    "triviapod-demo.yaml": "0aa20e0087887c7a12fe9adb0a6b01df1f35eeba3e33589d928e3ce30976946c",
+    "version_info.h": "c49a1b737582ede3271d1b77171549a6363d199b55acb7f908060de3b057ba58",
+    "firmware-release.txt": "8601c6912965adbf06288b149837f93c76a0548a97fb91293fd3327fa2071bd6",
+    "requirements.txt": "40190f8f72813e2ec3c530425d34561fd0a21657828adb2e4b4a877c8a70218a",
+    "ui_metrics.h": "1d7123a5c248c3c677007814575027f1c1aa563d6b96f0fbb87e07aa6f82a9eb",
+    "doorbell_frame.h": "bb1b114ded26e9cfdbee3264ce5c5e591f5db367ed8ce51cf648976a44f82040",
+    "audio_tone.h": "4a5cc6be4713251b9be8c27dd06171ddca21d689a9fa7bec523befa65dc504b7",
+    "camera_cover.h": "62400bd9a96c1e3799bca6db7f240f55bdc0578ff89bf11f70baa18c75acbed7",
+    "audio_loopback.h": "b4e57e32b96d3e003b2366b210a5f87606adb83a76a65c1c0ae9e47d78f6b778",
+    "packages/hardware.yaml": "d189cfc162d7a34a32792f41ea6ca76744926d6b98942f0012e2a171f030cd7f",
+    "packages/power.yaml": "07141b22bda18d5aa15ea4cf02341bc03481992ddda83b532b6e1f96522583f4",
+    "packages/display.yaml": "5b249ecdd3db755fc33bb2c214295a33dfd785824922eb1634d1c9a9e5a028b7",
+    "packages/sensors.yaml": "02c6301a38744efaa7b5ae10513d9cd8efbe8764ee8688bcb44a552298c7f631",
+    "packages/ui.yaml": "719ba07c5b21ea4b4c748b623f2d154479f4dfecb82a57d3c25557cc22685b8c",
+    "packages/inputs.yaml": "d18b2f7cd4431dbc72ca1c1fff2a65ad6f2356174419262dcf10dfe0f6b24fda",
+    "packages/audio.yaml": "c7717a96468cc3585c6c36866b230494926ec14ba12aa49ff657c107a41247e6",
+    "components/triviapod/__init__.py": "c7b1471680373806fecc84119bb1e6a6f52553604d1156abb96ca9db6d82309e",
+    "components/triviapod_media/media_player.py": "420d3a223295dc40062a3443b69e84d5f59d14dc391b0f8433957a938a260c61",
+    "components/triviapod_media/__init__.py": "581d130e66c978aa2447476c96f6c88403c6ac295749b7c1cdc2a68700eb61aa",
+    "components/triviapod/triviapod.h": "a11fd8a10654656c674045b42b5cf22afedb9f25a89f8194e319f3cc5291f2d8",
+    "components/triviapod/rtc_decode.h": "b7d76e6267acfa74143f111e1617d494aa940444db78bcb20ec303a9485f8824",
+    "components/triviapod_media/triviapod_media.h": "adfdc96b6435ba20d598ce1caa73fc45c94e91b3eda81f362ba5e9641094d512",
+    "components/triviapod/triviapod.cpp": "3faa480371cf2fc67caf49d74c90108fbb918d8fef24575b09dba12decebd361",
+    "tools/build.py": "3634727a31ec7183207afa388fe76bb65eaa103a6688f90dd3b5501c3c56eb17",
+    "fonts/NotoSans.ttf": "bfb7bb691513f12e734dc346c03a03f784912432d7e3fa8e56efcf906fe86b3d",
+    "fonts/OFL.txt": "cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a"
+  },
+  "hardware_validation": "Exported generic/provisioning build not yet flashed; hardware basis tested on one TP-01-A",
+  "prototype": true,
+  "credentials": "No Wi-Fi credentials,API key,household URL or unit MAC embedded"
+}

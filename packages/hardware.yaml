@@ -1,0 +1,31 @@
+esphome:
+  name: triviapod-demo
+  name_add_mac_suffix: true
+  friendly_name: TriviaPOD Prototype
+  build_path: .esphome/build/triviapod-demo
+esp32:
+  variant: esp32s3
+  flash_size: 32MB
+  framework:
+    type: esp-idf
+psram:
+  mode: octal
+  speed: 80MHz
+  ignore_not_found: false
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+  level: INFO
+i2c:
+  id: board_i2c
+  sda: GPIO47
+  scl: GPIO48
+  frequency: 100kHz
+  scan: true
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [triviapod]
+triviapod:
+  id: board
+  i2c_id: board_i2c

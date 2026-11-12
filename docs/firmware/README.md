@@ -1,0 +1,1 @@
+Only the generic credential-free image built from this repository belongs here. Never copy a private bring-up image, flash dump, NVS data, secrets file or owner build into this directory. tools/build.py --stage-web stages only its own generic build and records hashes/source provenance in build.json. The exported generic/provisioning image has not yet been flashed on hardware.

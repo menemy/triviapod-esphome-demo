@@ -1,0 +1,312 @@
+packages:
+  power: !include power.yaml
+esphome:
+  includes: [audio_loopback.h, audio_tone.h]
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          id(ui_audio_enabled) = true;
+          id(ui_yellow_hint) = "Record / replay";
+          id(ui_blue_hint) = "Speaker tone";
+          id(board_speaker).add_audio_output_callback([](uint32_t frames, int64_t timestamp_us) {
+            if (trivia_tone::active.load(std::memory_order_acquire))
+              trivia_tone::dac_frames.fetch_add(frames, std::memory_order_relaxed);
+          });
+globals:
+  - id: ui_final_mode
+    type: bool
+    initial_value: 'false'
+  - id: ui_media_busy
+    type: bool
+    initial_value: 'false'
+i2s_audio:
+  - id: audio_bus
+    i2s_mclk_pin: GPIO18
+    i2s_bclk_pin: GPIO17
+    i2s_lrclk_pin: GPIO15
+audio_dac:
+  - platform: es8311
+    id: codec
+    i2c_id: board_i2c
+    address: 0x18
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    use_mclk: true
+    use_microphone: false
+    mic_gain: 24DB
+microphone:
+  - platform: i2s_audio
+    id: board_mic
+    i2s_audio_id: audio_bus
+    adc_type: external
+    i2s_din_pin: GPIO16
+    pdm: false
+    channel: left
+    bits_per_sample: 16bit
+    sample_rate: 16000
+    on_data:
+      - lambda: |-
+          if (!trivia_loopback::recording.load(std::memory_order_acquire)) return;
+          trivia_loopback::append(x);
+          static uint32_t last = 0;
+          static size_t samples = 0;
+          static int peak = 0;
+          for (size_t n = 0; n + 1 < x.size(); n += 2) {
+            const int16_t value = int16_t(uint16_t(x[n]) | (uint16_t(x[n+1]) << 8));
+            peak = std::max(peak, std::abs(int(value)));
+            ++samples;
+          }
+          trivia_metrics::microphone_samples.fetch_add(x.size() / 2);
+          if (peak > trivia_metrics::microphone_peak.load()) trivia_metrics::microphone_peak.store(peak);
+          if (millis() - last >= 1000) {
+            ESP_LOGI("mic_check", "samples=%u peak=%d", unsigned(samples), peak);
+            samples = 0; peak = 0; last = millis();
+          }
+speaker:
+  - platform: i2s_audio
+    id: board_speaker
+    i2s_audio_id: audio_bus
+    dac_type: external
+    i2s_dout_pin: GPIO21
+    audio_dac: codec
+    channel: mono
+    bits_per_sample: 16bit
+    sample_rate: 16000
+    buffer_duration: 250ms
+    timeout: 250ms
+script:
+  - id: mic_check
+    mode: single
+    then:
+      - if:
+          condition:
+            lambda: return !id(ui_media_busy) && id(board).ready() && id(board_mic).is_stopped() && id(board_speaker).is_stopped() && !id(speaker_check).is_running();
+          then:
+            - lambda: |-
+                if (trivia_metrics::before_local_audio) trivia_metrics::before_local_audio();
+                trivia_loopback::prepare();
+                id(ui_action) = "Preparing recording";
+                ESP_LOGI("loopback_check", "event=request_accepted uptime_ms=%u", unsigned(millis()));
+            - component.update: panel
+            - if:
+                condition:
+                  lambda: return trivia_loopback::buffer != nullptr && id(board).amplifier(false);
+                then:
+                  - microphone.capture: board_mic
+                  - wait_until:
+                      condition:
+                        lambda: return id(board_mic).is_running();
+                      timeout: 2s
+                  - if:
+                      condition:
+                        lambda: return id(board_mic).is_running();
+                      then:
+                        - repeat:
+                            count: 3
+                            then:
+                              - delay: 30ms
+                              - lambda: id(board).arm_microphone();
+                        - lambda: |-
+                            id(ui_action) = "Speak now: 3 seconds";
+                        - component.update: panel
+                        - lambda: |-
+                            trivia_metrics::microphone_peak.store(0);
+                            trivia_metrics::microphone_samples.store(0);
+                            trivia_loopback::recording.store(true, std::memory_order_release);
+                            ESP_LOGI("loopback_check", "event=capture_start duration_ms=3000 uptime_ms=%u", unsigned(millis()));
+                        - delay: 3s
+                  - lambda: trivia_loopback::recording.store(false, std::memory_order_release);
+                  - microphone.stop_capture: board_mic
+                  - wait_until:
+                      condition:
+                        lambda: return id(board_mic).is_stopped();
+                      timeout: 2s
+                  - if:
+                      condition:
+                        lambda: return id(board_mic).is_stopped() && trivia_loopback::size() != 0;
+                      then:
+                        - lambda: |-
+                            ESP_LOGI("loopback_check", "Captured %u PCM bytes in volatile RAM", unsigned(trivia_loopback::size()));
+                            id(ui_action) = "Playing your recording";
+                        - component.update: panel
+                        - speaker.volume_set:
+                            id: board_speaker
+                            volume: 75%
+                        - lambda: |-
+                            id(board_speaker).set_audio_stream_info(esphome::audio::AudioStreamInfo(16, 1, 16000));
+                            id(board_speaker).start();
+                        - wait_until:
+                            condition:
+                              lambda: return id(board_speaker).is_running();
+                            timeout: 2s
+                        - if:
+                            condition:
+                              lambda: return id(board_speaker).is_running() && id(board).amplifier(true);
+                            then:
+                              - lambda: |-
+                                  trivia_loopback::playback_offset = 0;
+                                  trivia_loopback::playback_started_ms = millis();
+                              - while:
+                                  condition:
+                                    lambda: |-
+                                      return trivia_loopback::playback_offset < trivia_loopback::size()
+                                          && id(board_speaker).is_running()
+                                          && millis() - trivia_loopback::playback_started_ms < 6000;
+                                  then:
+                                    - lambda: |-
+                                        const size_t remaining = trivia_loopback::size() - trivia_loopback::playback_offset;
+                                        const size_t chunk = std::min(remaining, size_t(1024));
+                                        const size_t sent = id(board_speaker).play(trivia_loopback::buffer + trivia_loopback::playback_offset, chunk, 0);
+                                        trivia_loopback::playback_offset += sent;
+                                    - delay: 5ms
+                              - lambda: |-
+                                  trivia_loopback::queued_all = trivia_loopback::playback_offset == trivia_loopback::size();
+                                  ESP_LOGI("loopback_check", "Queued %u/%u PCM bytes", unsigned(trivia_loopback::playback_offset), unsigned(trivia_loopback::size()));
+                              - speaker.finish: board_speaker
+                              - wait_until:
+                                  condition:
+                                    lambda: return id(board_speaker).is_stopped();
+                                  timeout: 2s
+                        - lambda: |-
+                            id(ui_action) = trivia_loopback::queued_all && id(board_speaker).is_stopped()
+                                ? "Replay completed" : "Replay interrupted";
+                            ESP_LOGI("loopback_check", "event=playback_result queued_all=%s speaker_stopped=%s uptime_ms=%u", trivia_loopback::queued_all ? "yes" : "no", id(board_speaker).is_stopped() ? "yes" : "no", unsigned(millis()));
+                      else:
+                        - lambda: id(ui_action) = "No capture / mic stop error";
+                else:
+                  - lambda: id(ui_action) = "No RAM / amp-off error";
+            - lambda: trivia_loopback::recording.store(false, std::memory_order_release);
+            - speaker.stop: board_speaker
+            - wait_until:
+                condition:
+                  lambda: return id(board_speaker).is_stopped();
+                timeout: 2s
+            - lambda: |-
+                id(board).amplifier(false);
+                if (id(board_mic).is_stopped() && id(board_speaker).is_stopped()) {
+                  trivia_loopback::release();
+                  ESP_LOGI("loopback_check", "Volatile recording cleared and freed");
+                }
+            - component.update: panel
+          else:
+            - lambda: |-
+                id(ui_action) = "Audio busy";
+                ESP_LOGI("loopback_check", "event=request_rejected reason=audio_busy uptime_ms=%u", unsigned(millis()));
+            - component.update: panel
+  - id: speaker_check
+    mode: single
+    then:
+      - if:
+          condition:
+            lambda: return !id(ui_media_busy) && id(board).ready() && id(board_mic).is_stopped() && id(board_speaker).is_stopped() && !id(mic_check).is_running();
+          then:
+            - lambda: |-
+                if (trivia_metrics::before_local_audio) trivia_metrics::before_local_audio();
+                trivia_tone::requested_profile = trivia_tone::Profile::HIGH_B;
+                trivia_tone::reset();
+                id(ui_action) = trivia_tone::profile_label();
+                ESP_LOGI("speaker_check", "event=request_accepted profile=%s frequency1_hz=%u frequency2_hz=%u peak=%u duration_ms=1000 expected_bytes=32000 uptime_ms=%u", trivia_tone::profile_name(), trivia_tone::first_frequency(), trivia_tone::second_frequency(), trivia_tone::peak_amplitude(), unsigned(millis()));
+            - component.update: panel
+            - speaker.volume_set:
+                id: board_speaker
+                volume: 75%
+            - lambda: |-
+                id(board_speaker).set_audio_stream_info(esphome::audio::AudioStreamInfo(16, 1, 16000));
+                id(board_speaker).start();
+            - wait_until:
+                condition:
+                  lambda: return id(board_speaker).is_running();
+                timeout: 2s
+            - if:
+                condition:
+                  lambda: return id(board_speaker).is_running() && id(board).amplifier(true);
+                then:
+                  - lambda: |-
+                      // Match replay's unmute/volume, now checked again with clocks running.
+                      const bool unmuted = id(codec).set_mute_off();
+                      const bool volume_set = id(codec).set_volume(0.75f);
+                      const bool registers_ok = id(board).verify_audio_output();
+                      trivia_tone::failed = !unmuted || !volume_set || !registers_ok;
+                      trivia_tone::started_ms = millis();
+                      trivia_tone::active.store(!trivia_tone::failed, std::memory_order_release);
+                      ESP_LOGI("tone_check", "event=output_ready unmute_write=%s volume_write=%s register_check=%s expected_bytes=32000", unmuted ? "yes" : "no", volume_set ? "yes" : "no", registers_ok ? "yes" : "no");
+                  - while:
+                      condition:
+                        lambda: return !trivia_tone::failed && trivia_tone::offset < trivia_tone::BYTES && id(board_speaker).is_running() && millis() - trivia_tone::started_ms < 6000;
+                      then:
+                        - lambda: |-
+                            const size_t count = trivia_tone::make_chunk();
+                            const uint32_t call_us = micros();
+                            const size_t accepted = id(board_speaker).play(trivia_tone::chunk.data(), count, 0);
+                            trivia_tone::timing.observe(call_us, micros(), count, accepted);
+                            if (accepted > count || (accepted & 1)) {
+                              trivia_tone::failed = true;
+                              ESP_LOGE("tone_check", "event=invalid_accepted_count accepted=%u offered=%u", unsigned(accepted), unsigned(count));
+                            } else {
+                              trivia_tone::offset += accepted;
+                            }
+                        - delay: 5ms
+                  - lambda: |-
+                      trivia_tone::all_queued = !trivia_tone::failed && trivia_tone::offset == trivia_tone::BYTES;
+                      ESP_LOGI("tone_check", "event=queued accepted_bytes=%u expected_bytes=%u queued_all=%s elapsed_ms=%u", unsigned(trivia_tone::offset), unsigned(trivia_tone::BYTES), trivia_tone::all_queued ? "yes" : "no", unsigned(millis() - trivia_tone::started_ms));
+                      ESP_LOGI("tone_check", "event=write_timing profile=%s attempts=%u successful=%u zero_accepts=%u partial_accepts=%u call_gap_min_us=%u call_gap_max_us=%u accept_gap_min_us=%u accept_gap_max_us=%u call_duration_max_us=%u", trivia_tone::profile_name(), unsigned(trivia_tone::timing.attempts), unsigned(trivia_tone::timing.successful), unsigned(trivia_tone::timing.zero_accepts), unsigned(trivia_tone::timing.partial_accepts), unsigned(trivia_tone::timing.min_call_gap()), unsigned(trivia_tone::timing.call_gap_max), unsigned(trivia_tone::timing.min_success_gap()), unsigned(trivia_tone::timing.success_gap_max), unsigned(trivia_tone::timing.call_duration_max));
+                  - speaker.finish: board_speaker
+                  - wait_until:
+                      condition:
+                        lambda: return id(board_speaker).is_stopped();
+                      timeout: 3s
+                  - lambda: |-
+                      trivia_tone::drained = id(board_speaker).is_stopped();
+                      ESP_LOGI("tone_check", "event=drain_result graceful_stopped=%s dac_frames=%u expected_frames=16000", trivia_tone::drained ? "yes" : "no", unsigned(trivia_tone::dac_frames.load()));
+                else:
+                  - logger.log:
+                      level: ERROR
+                      format: "Speaker test could not start output"
+            - speaker.stop: board_speaker
+            - wait_until:
+                condition:
+                  lambda: return id(board_speaker).is_stopped();
+                timeout: 2s
+            - lambda: |-
+                id(board).amplifier(false);
+                trivia_tone::active.store(false, std::memory_order_release);
+                const bool completed = trivia_tone::complete(id(board_speaker).is_stopped());
+                id(ui_action) = completed ? "Tone sent: 1 second" : "Tone transfer failed";
+                ESP_LOGI("speaker_check", "event=finished speaker_stopped=%s queued_all=%s accepted_bytes=%u uptime_ms=%u", id(board_speaker).is_stopped() ? "yes" : "no", trivia_tone::all_queued ? "yes" : "no", unsigned(trivia_tone::offset), unsigned(millis()));
+                ESP_LOGI("tone_check", "event=dac_result frames=%u expected_frames=16000 graceful_stopped=%s", unsigned(trivia_tone::dac_frames.load()), trivia_tone::drained ? "yes" : "no");
+                if (!completed) ESP_LOGE("tone_check", "event=incomplete_output");
+            - component.update: panel
+binary_sensor:
+  - id: !extend yellow_button
+    on_press:
+      - script.execute: mic_check
+  - id: !extend blue_button
+    on_press:
+      - if:
+          condition:
+            lambda: return !id(ui_final_mode);
+          then:
+            - script.execute: speaker_check
+button:
+  - platform: template
+    name: Record and Playback
+    on_press:
+      - script.execute: mic_check
+  - platform: template
+    name: Speaker Test Tone
+    on_press:
+      - script.execute: speaker_check
+
+interval:
+  - interval: 10s
+    then:
+      - lambda: |-
+          ESP_LOGI("input_summary", "uptime_ms=%u yellow=%d blue=%d power=%d touch=%s x=%d y=%d mic_stopped=%s speaker_stopped=%s", unsigned(millis()), id(yellow_count), id(blue_count), id(power_count), id(screen_touch).state ? "down" : "up", id(touch_x), id(touch_y), id(board_mic).is_stopped() ? "yes" : "no", id(board_speaker).is_stopped() ? "yes" : "no");
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            lambda: return !id(mic_check).is_running() && id(board_mic).is_stopped() && id(board_speaker).is_stopped() && trivia_loopback::buffer != nullptr;
+          then:
+            - lambda: trivia_loopback::release();

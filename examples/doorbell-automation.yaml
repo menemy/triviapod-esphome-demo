@@ -1,0 +1,12 @@
+# Replace BOTH entity IDs with your own HA entities. No particular home is assumed.
+alias: TriviaPOD prototype doorbell test
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.your_doorbell_ring
+    from: "off"
+    to: "on"
+actions:
+  - action: button.press
+    target:
+      entity_id: button.your_triviapod_doorbell_ring_test
+mode: single

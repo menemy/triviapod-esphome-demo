@@ -1,0 +1,71 @@
+packages:
+  inputs: !include inputs.yaml
+esphome:
+  on_boot:
+    priority: -100
+    then:
+      - lambda: id(ui_power_hint) = "Motor pulse";
+sensor:
+  - platform: template
+    name: Battery Voltage
+    id: battery_voltage
+    device_class: voltage
+    state_class: measurement
+    unit_of_measurement: V
+    accuracy_decimals: 3
+    update_interval: 5s
+    lambda: return id(board).voltage(0x22);
+  - platform: template
+    name: USB Voltage
+    id: usb_voltage
+    device_class: voltage
+    state_class: measurement
+    unit_of_measurement: V
+    accuracy_decimals: 3
+    update_interval: 5s
+    lambda: return id(board).voltage(0x24);
+binary_sensor:
+  - platform: template
+    name: USB Connected
+    id: usb_connected
+    lambda: |-
+      if (isnan(id(usb_voltage).state)) return {};
+      return id(usb_voltage).state > 4.0f;
+  - platform: template
+    name: Battery Charging
+    id: battery_charging
+    lambda: return id(board).charging();
+  - id: !extend power_button
+    on_press:
+      - lambda: id(ui_action) = "Motor pulse 200ms";
+      - output.set_level:
+          id: motor_output
+          level: 50%
+      - component.update: panel
+output:
+  - platform: template
+    id: motor_output
+    type: float
+    write_action:
+      - lambda: id(board).motor_pulse(state);
+button:
+  - platform: template
+    name: Motor Test Pulse
+    on_press:
+      - output.set_level:
+          id: motor_output
+          level: 50%
+
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          const char *charge = id(battery_charging).has_state() ? (id(battery_charging).state ? "CHG" : "idle") : "?";
+          id(ui_detail1) = str_sprintf("BAT %.3fV USB %.3fV %s", id(battery_voltage).state, id(usb_voltage).state, charge);
+  - interval: 5s
+    then:
+      - lambda: |-
+          ESP_LOGI("power_check", "battery_v=%.3f usb_v=%.3f usb=%s charging=%s",
+              id(battery_voltage).state, id(usb_voltage).state,
+              id(usb_connected).has_state() ? (id(usb_connected).state ? "yes" : "no") : "unknown",
+              id(battery_charging).has_state() ? (id(battery_charging).state ? "yes" : "no") : "unknown");

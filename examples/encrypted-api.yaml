@@ -1,0 +1,7 @@
+# Compile your own image with a unique API key for use beyond the generic demo.
+# Copy this file to the repository root before compiling so include paths match.
+packages:
+  demo: !include triviapod-demo.yaml
+api:
+  encryption:
+    key: !secret api_encryption_key
