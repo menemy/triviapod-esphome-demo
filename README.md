@@ -35,6 +35,8 @@ The **Checks** page is the default. The exact firmware/build identity is shown o
 
 The HA device also exposes button states/counters, battery and USB voltage/detection, charge state, IMU values, read-only RTC status, display brightness, guarded WAV media playback, and local test buttons.
 
+To check sound **from HA**, download the [synthetic test WAV](docs/firmware/tone-1k-2k-16k-mono.wav), upload it under HA **Media → My media → Manage → Add media**, and play it to **TriviaPOD Speaker** as an announcement. It is a 1-second, 16 kHz, mono, 16-bit 1/2 kHz beep generated from the same tone code, not a microphone recording. This does not require Assist. [HA media upload instructions](https://www.home-assistant.io/more-info/local-media/add-media/).
+
 The microphone and speaker share a half-duplex I2S bus. Local replay and HA playback are serialized; a conflicting playback request is rejected. This is not two-way talk to a doorbell, not an Assist satellite, and does not require STT/TTS.
 
 ## Optional camera page

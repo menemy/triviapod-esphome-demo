@@ -9,6 +9,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import wave
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -40,6 +41,8 @@ def check_export():
     assert 'platform: homeassistant' not in ui and 'http://example.invalid/snapshot.jpg' in ui
     assert 'last.draw_cover(it)' in ui and 'improv_serial:' in config
     assert 'esp_read_mac' not in (ROOT/'components/triviapod/triviapod.cpp').read_text()
+    with wave.open(str(docs/'firmware/tone-1k-2k-16k-mono.wav'),'rb') as sound:
+        assert (sound.getnchannels(),sound.getsampwidth(),sound.getframerate(),sound.getnframes())==(1,2,16000,16000)
     print('PASS: staged generic image,checksums,source hashes,version,model/offset and credential-free configuration')
 
 def host_tests():
